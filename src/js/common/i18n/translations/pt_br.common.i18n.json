@@ -1,4 +1,6 @@
 {
+  "report": "Relatório",
+  "download": "Download",
   "ok": "OK",
   "cancel": "Cancelar",
   "hello": "Olá",
@@ -13,5 +15,6 @@
   "pin": "Fixar",
   "edit": "Editar",
   "delete": "Remover",
-  "finish": "Finalizar"
+  "finish": "Finalizar",
+  "noData": "Sem Dados"
 }

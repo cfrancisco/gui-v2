@@ -5,7 +5,6 @@ query getDeviceHistory($filter: HistoryInput!) {
   getDeviceHistoryForDashboard(filter: $filter)
 }
 `;
-
 const GQL_DEVICES_LIST = `
 query getDevices($page: PageInput, $filter: FilterDeviceInput) {
   getDevices(page: $page, filter: $filter) {
@@ -17,6 +16,8 @@ query getDevices($page: PageInput, $filter: FilterDeviceInput) {
       attrs{
         label
         valueType
+        isDynamic
+        staticValue
       }
     }
   }
@@ -24,7 +25,7 @@ query getDevices($page: PageInput, $filter: FilterDeviceInput) {
 `;
 
 export const parseHistoryQuery = filter => {
-  const { isRealTime, ...restFilter } = filter;
+  const { isRealTime, staticAttributes, ...restFilter } = filter;
   const variables = {
     filter: restFilter,
   };
@@ -32,6 +33,7 @@ export const parseHistoryQuery = filter => {
     query: GQL_WIDGET_HISTORIC,
     variables: JSON.stringify(variables),
     isRealTime,
+    staticAttributes,
   };
 };
 

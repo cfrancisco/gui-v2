@@ -5,6 +5,15 @@ const useStyles = makeStyles(theme => {
     root: {
       borderRadius: 5,
       height: '100%',
+      overflowY: 'hidden',
+      '&:hover': {
+        overflowY: 'auto',
+      },
+    },
+    lines: {
+      fontFamily: 'monospace',
+      padding: '14px 5px',
+      fontSize: '1rem',
     },
     lines: {
       padding: '14px 5px',
@@ -12,9 +21,11 @@ const useStyles = makeStyles(theme => {
     head: {
       fontWeight: 'normal',
       fontSize: '0.8rem',
+      fontFamily: '"Raleway", "Roboto", "Helvetica", "sans-serif"',
       lineHeight: '24px',
       textTransform: 'none',
-      color: theme.palette.primary.dark,
+      textAlign: 'center',
+      color: '#6b7288',
       backgroundColor: theme.palette.table.head,
       userSelect: 'none',
     },

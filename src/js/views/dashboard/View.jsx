@@ -1,29 +1,30 @@
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
-import React, { useCallback, useEffect, Fragment } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 
-import Button from '@material-ui/core/Button';
-import AddIcon from '@material-ui/icons/Add';
-import PauseIcon from '@material-ui/icons/Pause';
-import PlayIcon from '@material-ui/icons/PlayArrow';
-import { DevelopmentContainer } from 'Components/Containers';
 import _ from 'lodash';
 import PropTypes from 'prop-types';
 import { Responsive, WidthProvider } from 'react-grid-layout';
 import { useTranslation } from 'react-i18next';
 import { connect } from 'react-redux';
 import { actions as dashboardActions } from 'Redux/dashboard';
+import { queryLastOperation } from 'Redux/data_layout';
 import {
   dashboardConfig,
   dashboardData,
   dashboardLayout,
   dashboardSaga,
 } from 'Selectors/dashboardSelector';
+import { Device as DeviceService } from 'Services';
 
 import { ViewContainer } from '../stateComponents';
+import { ReportFilter } from './report';
+import { AccountWidget } from './widget/account';
 import { AreaChartWidget } from './widget/areaChart';
 import { BarChartWidget } from './widget/barChart';
+import { CSMapWidget } from './widget/csMap';
 import { LineChartWidget } from './widget/lineChart';
+import { MapWidget } from './widget/map';
 import { TableWidget } from './widget/table';
 
 const ResponsiveReactGridLayout = WidthProvider(Responsive);
@@ -48,13 +49,28 @@ const Dashboard = props => {
     checkData,
   } = props;
 
-  const { bar, line, area, table } = __CONFIG__;
-
+  const { bar, line, area, table, account, map, csMap } = __CONFIG__;
+  const [lastOperation, setLastOperation] = useState({});
   const handleClick = useCallback(() => {
     history.push('/dashboard/widget');
   }, [history]);
 
   useEffect(() => {
+    // 1. Fetch info about last operation
+    DeviceService.getDevicesHistoryParsed(queryLastOperation)
+      .then(resp => {
+        const { getDeviceHistoryForDashboard } = resp;
+        const deviceHistory = JSON.parse(getDeviceHistoryForDashboard);
+        let attrs = {};
+        deviceHistory.forEach(lin => {
+          attrs = { ...lin, ...attrs };
+        });
+        setLastOperation(attrs);
+      })
+      .catch(error => {
+        console.error(error);
+      });
+
     if (!_.isEmpty(sagaConfig)) {
       startPolling(sagaConfig);
     }
@@ -109,6 +125,7 @@ const Dashboard = props => {
     element => {
       const { i } = element;
       const [type] = i.split('/');
+      // console.log('i', i, type, configs[i]);
       switch (type) {
         case line:
           return (
@@ -152,6 +169,43 @@ const Dashboard = props => {
               <TableWidget
                 id={i}
                 onDelete={onRemoveItem}
+                lastOperation={lastOperation}
+                onPin={onPin}
+                data={data[i]}
+                config={configs[i]}
+              />
+            </div>
+          );
+        case account:
+          return (
+            <div key={i}>
+              <AccountWidget
+                id={i}
+                onDelete={onRemoveItem}
+                onPin={onPin}
+                data={data[i]}
+                config={configs[i]}
+              />
+            </div>
+          );
+        case map:
+          return (
+            <div key={i}>
+              <MapWidget
+                id={i}
+                onDelete={onRemoveItem}
+                onPin={onPin}
+                data={data[i]}
+                config={configs[i]}
+              />
+            </div>
+          );
+        case csMap:
+          return (
+            <div key={i}>
+              <CSMapWidget
+                id={i}
+                onDelete={onRemoveItem}
                 onPin={onPin}
                 data={data[i]}
                 config={configs[i]}
@@ -159,51 +213,16 @@ const Dashboard = props => {
             </div>
           );
         default:
-          return (
-            <div key={i}>
-              <AreaChartWidget id={i} onDelete={onRemoveItem} onPin={onPin} />
-            </div>
-          );
+          return <div key={i} />;
       }
     },
-    [area, bar, configs, line, data, onPin, onRemoveItem, table],
+    [area, bar, account, configs, line, data, onPin, onRemoveItem, table, map],
   );
 
   const getHeaderContent = useCallback(() => {
     return (
       <>
-        <DevelopmentContainer>
-          <Button
-            style={{ marginLeft: 10 }}
-            size='small'
-            variant='outlined'
-            color='inherit'
-            startIcon={<PlayIcon />}
-            onClick={() => startPolling(sagaConfig)}
-          >
-            {t('common:start')}
-          </Button>
-          <Button
-            style={{ marginLeft: 10 }}
-            size='small'
-            variant='outlined'
-            color='inherit'
-            startIcon={<PauseIcon />}
-            onClick={() => stopPolling()}
-          >
-            {t('common:stop')}
-          </Button>
-        </DevelopmentContainer>
-        <Button
-          style={{ marginLeft: 10 }}
-          size='small'
-          variant='outlined'
-          color='inherit'
-          startIcon={<AddIcon />}
-          onClick={() => handleClick()}
-        >
-          {t('common:add')}
-        </Button>
+        <ReportFilter t={t} />
       </>
     );
   }, [handleClick, startPolling, stopPolling, sagaConfig]);
@@ -223,6 +242,7 @@ const Dashboard = props => {
         compactType='vertical'
         verticalCompact
         preventCollision={false}
+        draggableHandle='.MuiCardHeader-root'
       >
         {_.map(layout, element => createElement(element))}
       </ResponsiveReactGridLayout>
@@ -235,7 +255,7 @@ Dashboard.defaultProps = {
   rowHeight: 30,
   cols: {
     lg: 12,
-    md: 10,
+    md: 12,
     sm: 6,
     xs: 4,
     xxs: 2,

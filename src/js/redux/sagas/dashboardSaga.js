@@ -29,19 +29,33 @@ const getQueriesFromSchema = schema => {
 
   // eslint-disable-next-line no-restricted-syntax
   for (const key in schema) {
+    const [type] = key.split('/');
     if (schema[key].isRealTime) {
-      realTimeQueries.push({
-        key,
-        query: schema[key],
-      });
+      realTimeQueries.push({ key, type, query: schema[key] });
     } else {
-      staticQueries.push({
-        key,
-        query: schema[key],
-      });
+      staticQueries.push({ key, type, query: schema[key] });
     }
   }
   return { staticQueries, realTimeQueries };
+};
+
+const mergeMapValues = (obj1, obj2) => {
+  const obj = {};
+  if (Array.isArray(obj1)) {
+    return obj1;
+  }
+  if (obj1) {
+    Object.entries(obj1).forEach(([key, value]) => {
+      obj[key] = value;
+    });
+  }
+
+  if (obj2) {
+    Object.entries(obj2).forEach(([key, value]) => {
+      obj[key] = value;
+    });
+  }
+  return obj;
 };
 
 function* pollData(queries, interval) {
@@ -51,13 +65,23 @@ function* pollData(queries, interval) {
       const {
         getDeviceHistoryForDashboard,
       } = yield Device.getDevicesHistoryParsed(realTimeQuery.query);
-
       if (getDeviceHistoryForDashboard) {
-        yield put(
-          dashboardActions.updateValues({
-            [realTimeQuery.key]: JSON.parse(getDeviceHistoryForDashboard),
-          }),
-        );
+        if (realTimeQuery.type === '9') {
+          yield put(
+            dashboardActions.updateValues({
+              [realTimeQuery.key]: JSON.parse(getDeviceHistoryForDashboard),
+            }),
+          );
+        } else {
+          yield put(
+            dashboardActions.updateValues({
+              [realTimeQuery.key]: mergeMapValues(
+                JSON.parse(getDeviceHistoryForDashboard),
+                realTimeQuery.query.staticAttributes,
+              ),
+            }),
+          );
+        }
       }
     }
     yield call(delay, interval);
@@ -76,8 +100,8 @@ function* pollDashboard({ payload }) {
   while (true) {
     const { end } = yield race({
       // TODO: Make the timing adjustable.
-      // For now the timer is set to 15 seconds
-      poll: call(pollData, realTimeQueries, 15000),
+      // For now the timer is set to 15 minutes
+      poll: call(pollData, realTimeQueries, 900000),
       end: take(dashboardConstants.STOP_POLLING),
     });
     if (end) {

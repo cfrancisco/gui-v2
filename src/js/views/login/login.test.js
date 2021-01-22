@@ -5,7 +5,6 @@ import { render, fireEvent, act } from '@testing-library/react';
 import * as api from 'APIs/index';
 import { mount } from 'enzyme';
 import { Authentication } from 'Services';
-
 import Login, { LoginForm } from './View';
 
 jest.mock('react-i18next', () => ({
@@ -53,6 +52,7 @@ describe('Login', () => {
     wrapper.update();
     expect(wrapper.find(LoginForm).find(Alert)).toHaveLength(1);
   });
+
 
   it('shoud be able to simple render Network error', async () => {
     jest.spyOn(Authentication, 'login').mockImplementationOnce(() => {

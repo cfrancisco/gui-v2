@@ -29,6 +29,16 @@ const theme = createMuiTheme({
   },
 
   overrides: {
+    MuiTypography: {
+      h6: {
+        fontSize: '1.20rem',
+        fontFamily: '"Raleway", "Roboto", "Helvetica", "sans-serif"',
+      },
+      h5: {
+        fontSize: '1.3rem',
+        fontFamily: '"Raleway", "Roboto", "Helvetica", "sans-serif"',
+      },
+    },
     MuiButtonBase: {
       root: {
         verticalAlign: 'top',
